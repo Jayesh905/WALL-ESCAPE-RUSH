@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>WALL ESCAPE RUSH</title>
+<style>
+:root{color-scheme:dark;--cyan:#53f7ff;--pink:#ff4fd8;--gold:#ffd65a}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#080b20;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;touch-action:none}
+#game{display:block;width:100vw;height:100vh;outline:0}
+#hud{position:fixed;inset:0;pointer-events:none;padding:clamp(10px,2vw,22px);display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.brand{font-weight:1000;letter-spacing:.08em;font-size:clamp(15px,2.6vw,25px);line-height:1.05;text-shadow:0 0 18px #34e7ff}
+.brand small{display:block;font-size:10px;letter-spacing:.25em;color:#a8c5ff;margin-top:5px}
+.stats{display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+.pill{background:#101932cc;border:1px solid #6beeff6b;box-shadow:0 0 14px #28e5ff20,inset 0 0 14px #28e5ff0c;border-radius:12px;padding:7px 11px;font-size:12px;font-weight:800;backdrop-filter:blur(8px);white-space:nowrap}
+.pill b{color:var(--gold);font-size:15px;margin-left:4px}
+.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.help{font-size:11px;color:#c5d4ff;background:#101932aa;border:1px solid #6beeff40;border-radius:10px;padding:8px 11px;max-width:370px;line-height:1.5}
+.actions{display:flex;gap:7px;pointer-events:auto;flex-wrap:wrap;justify-content:flex-end}
+button{font:800 12px system-ui;color:#fff;background:linear-gradient(135deg,#202c55,#121a36);border:1px solid #63eaff8c;border-radius:11px;padding:10px 12px;cursor:pointer;box-shadow:0 0 13px #31eaff1a}
+button:active{transform:scale(.96)}button.gold{border-color:#ffd65a;background:linear-gradient(135deg,#795b19,#332914)}
+#overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#0c1b3ddd,#050816eF);padding:18px;z-index:5}
+.panel{width:min(520px,100%);text-align:center;border:1px solid #6ceeff8a;border-radius:24px;padding:clamp(22px,5vw,42px);background:linear-gradient(145deg,#15284beF,#0a1026f5);box-shadow:0 0 70px #1de8ff24,inset 0 0 35px #40dcff0b}
+.panel .logo{font-size:clamp(30px,7vw,54px);font-weight:1000;line-height:.98;letter-spacing:-.04em;text-shadow:0 0 22px #45e9ff}
+.panel .logo span{color:#ff5edc}.sub{color:#b9c9ed;line-height:1.6;font-size:14px;margin:18px 0}
+.primary{font-size:15px;padding:14px 26px;background:linear-gradient(100deg,#00c9e8,#675bff);border:0;box-shadow:0 0 25px #31eaff45}
+.keys{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:18px}.keys span{font-size:11px;color:#c3d5ff;border:1px solid #91baff55;padding:5px 8px;border-radius:7px}
+#toast{position:fixed;top:20%;left:50%;transform:translateX(-50%);background:#09152be8;border:1px solid #5bf3ff;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:800;opacity:0;transition:opacity .2s;pointer-events:none;z-index:4;white-space:nowrap}
+#mobileControls{position:fixed;inset:auto 0 0 0;height:150px;pointer-events:none;display:none;z-index:3}
+#joyBase{position:absolute;left:22px;bottom:22px;width:104px;height:104px;border-radius:50%;border:2px solid #8aefff77;background:#10254b70;pointer-events:auto;touch-action:none}
+#joyKnob{position:absolute;left:31px;top:31px;width:40px;height:40px;border-radius:50%;background:#58eaffb8;border:2px solid #d5fbff;box-shadow:0 0 20px #35dfff}
+.mobileBtns{position:absolute;right:17px;bottom:24px;display:flex;gap:9px;pointer-events:auto}
+.mobileBtns button{width:56px;height:56px;border-radius:50%;padding:0;font-size:11px;background:#17244edb}
+@media(max-width:650px){.help{max-width:190px;font-size:10px}.pill{padding:6px 8px;font-size:10px}.pill b{font-size:13px}.actions button{padding:8px 9px;font-size:10px}.bottom{align-items:flex-end}#mobileControls{display:block}}
+</style>
+</head>
+<body>
+<canvas id="game" aria-label="WALL ESCAPE RUSH game"></canvas>
+<div id="hud">
+  <div class="top">
+    <div class="brand">WALL ESCAPE <span style="color:#ff55dc">RUSH</span><small>NEON CITY SURVIVAL</small></div>
+    <div class="stats">
+      <div class="pill">LEVEL <b id="level">1</b></div>
+      <div class="pill">SCORE <b id="score">0</b></div>
+      <div class="pill">COINS <b id="coins">0</b></div>
+      <div class="pill">♥ <b id="health">3</b></div>
+    </div>
+  </div>
+  <div class="bottom">
+    <div class="help">Move: <b>WASD / arrows</b> · Jump: <b>Space</b> · Boost: <b>B (5 coins)</b> · Shield: <b>Q (7 coins)</b> · Skin: <b>K (10 coins)</b><br>Reach the glowing gate before the arena closes in.</div>
+    <div class="actions"><button id="boostBtn">⚡ BOOST · 5</button><button id="shieldBtn">◈ SHIELD · 7</button><button id="skinBtn">✦ SKIN · 10</button><button id="pauseBtn">Ⅱ PAUSE</button><button id="restartBtn">↻ RESTART</button></div>
+  </div>
+</div>
+<div id="toast"></div>
+<div id="overlay">
+  <div class="panel">
+    <div class="logo">WALL ESCAPE<br><span>RUSH</span></div>
+    <div class="sub">A neon arena. Four hungry walls. One glowing exit.<br>Collect coins, dodge the traps, and make your escape.</div>
+    <button class="primary" id="startBtn">▶ START RUN</button>
+    <div class="keys"><span>WASD / ARROWS MOVE</span><span>SPACE JUMP</span><span>B BOOST</span><span>Q SHIELD</span></div>
+    <div class="sub" style="font-size:11px;margin-bottom:0">Coins unlock temporary powers and fresh character colors. Every escape starts a tougher level.</div>
+  </div>
+</div>
+<div id="mobileControls">
+  <div id="joyBase"><div id="joyKnob"></div></div>
+  <div class="mobileBtns"><button id="jumpBtn">JUMP</button><button id="mBoost">BOOST</button><button id="mShield">SHIELD</button></div>
+</div>
+<script>
+(()=>{
+'use strict';
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+let W=innerWidth,H=innerHeight,DPR=Math.min(devicePixelRatio||1,2);
+function resize(){W=innerWidth;H=innerHeight;DPR=Math.min(devicePixelRatio||1,2);canvas.width=Math.floor(W*DPR);canvas.height=Math.floor(H*DPR);canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(DPR,0,0,DPR,0,0);setupArena()}
+addEventListener('resize',resize);
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+let state='menu',last=0,elapsed=0,score=0,coins=0,level=1,health=3,skin=0,boost=0,shield=0,shake=0,toastTimer=0;
+let arena={x:100,y:100,w:600,h:400},player, walls=[],coinItems=[],traps=[],particles=[],gate={},bonus=null,keys={},joy={x:0,y:0},joyActive=false,spawnClock=0,gateClock=0,bonusClock=0;
+const skins=['#55f4ff','#ff65d9','#ffe16a','#a2ff75','#b49aff','#ff9864'];
+function setupArena(){
+ const pad=Math.max(38,Math.min(W,H)*.075);
+ arena={x:pad,y:Math.max(pad+25,H*.16),w:Math.max(100,W-pad*2),h:Math.max(100,H-Math.max(pad+25,H*.16)-Math.max(78,H*.12))};
+ if(player){player.x=arena.x+arena.w/2;player.y=arena.y+arena.h/2;}
+ if(!walls.length) resetWalls();
+}
+function resetWalls(){walls=[
+ {side:'top',p:0,v:rand(.6,1.2),dir:1,color:'#ff4fd8'},
+ {side:'right',p:0,v:rand(.5,1.1),dir:1,color:'#42eaff'},
+ {side:'bottom',p:0,v:rand(.6,1.2),dir:1,color:'#ffbd4a'},
+ {side:'left',p:0,v:rand(.5,1.1),dir:1,color:'#9a72ff'}
+];}
+function newPlayer(){return {x:arena.x+arena.w/2,y:arena.y+arena.h/2,vx:0,vy:0,r:13,z:0,vz:0,inv:0,face:0};}
+function startGame(){score=0;coins=0;level=1;health=3;skin=0;boost=shield=0;particles=[];traps=[];coinItems=[];bonus=null;resetWalls();player=newPlayer();spawnLevel();state='play';$('overlay').style.display='none';updateHud();say('Find the exit gate!')}
+function spawnLevel(){
+ walls.forEach(w=>{w.p=0;w.v=rand(.9,1.45)+level*.075;w.dir=Math.random()<.5?1:-1;});
+ player.x=arena.x+arena.w/2;player.y=arena.y+arena.h/2;player.vx=player.vy=0;player.z=0;
+ coinItems=[];traps=[];particles=[];
+ for(let i=0;i<Math.min(6+level,19);i++)spawnCoin();
+ for(let i=0;i<Math.min(4+Math.floor(level/1.5),13);i++)spawnTrap();
+ setGate();gateClock=0;bonusClock=0;bonus=null;
+}
+function safePoint(){return {x:rand(arena.x+35,arena.x+arena.w-35),y:rand(arena.y+35,arena.y+arena.h-35)}}
+function spawnCoin(){let p=safePoint(),star=Math.random()<.18;coinItems.push({...p,r:star?11:8,phase:rand(0,6.28),value:star?3:1,star})}
+function spawnTrap(){let p=safePoint();traps.push({...p,r:rand(14,21),phase:rand(0,6.28),speed:rand(.9,1.8)+level*.025,axis:Math.random()<.5?'x':'y',range:rand(24,65),baseX:p.x,baseY:p.y})}
+function setGate(){
+ // Keep the entire glowing exit safely inside the arena, away from screen edges.
+ let side=['top','right','bottom','left'][Math.floor(Math.random()*4)];
+ let margin=38;
+ let x=side==='left'?arena.x+margin:side==='right'?arena.x+arena.w-margin:rand(arena.x+margin,arena.x+arena.w-margin);
+ let y=side==='top'?arena.y+margin:side==='bottom'?arena.y+arena.h-margin:rand(arena.y+margin,arena.y+arena.h-margin);
+ gate={side,x,y,r:22,phase:0};
+}
+function say(s){$('toast').textContent=s;$('toast').style.opacity=1;toastTimer=1.8}
+function updateHud(){$('level').textContent=level;$('score').textContent=score;$('coins').textContent=coins;$('health').textContent=health}
+function buy(type){
+ if(state!=='play')return;
+ if(type==='boost'&&coins>=5){coins-=5;boost=5.5;say('SPEED BOOST ACTIVATED!');burst(player.x,player.y,'#55f4ff',24)}
+ else if(type==='shield'&&coins>=7){coins-=7;shield=7;say('SHIELD ONLINE!');burst(player.x,player.y,'#a68cff',24)}
+ else if(type==='skin'&&coins>=10){coins-=10;skin=(skin+1)%skins.length;say('NEW NEON SKIN UNLOCKED!');burst(player.x,player.y,skins[skin],25)}
+ else say('Need more coins for that power.');
+ updateHud();
+}
+$('boostBtn').onclick=()=>buy('boost');$('shieldBtn').onclick=()=>buy('shield');$('skinBtn').onclick=()=>buy('skin');
+$('startBtn').onclick=startGame;$('restartBtn').onclick=startGame;
+$('pauseBtn').onclick=()=>{if(state==='play'){state='paused';$('pauseBtn').textContent='▶ RESUME';showOverlay('PAUSED','Take a breath. The walls are waiting.','RESUME RUN',()=>{state='play';$('overlay').style.display='none';$('pauseBtn').textContent='Ⅱ PAUSE'})}else if(state==='paused'){state='play';$('overlay').style.display='none';$('pauseBtn').textContent='Ⅱ PAUSE'}};
+function showOverlay(title,desc,btn,action){$('overlay').style.display='flex';$('overlay').innerHTML=`<div class="panel"><div class="logo">${title}</div><div class="sub">${desc}</div><button class="primary" id="overlayAction">${btn}</button><div class="keys"><span>WASD / ARROWS MOVE</span><span>SPACE JUMP</span><span>B BOOST</span><span>Q SHIELD</span></div></div>`;$('overlayAction').onclick=action}
+function endGame(){state='over';showOverlay('RUN OVER',`Score: <b>${score}</b> · Coins collected: <b>${coins}</b><br>You reached level <b>${level}</b>. Ready to rush again?`,'PLAY AGAIN',startGame)}
+function winLevel(){score+=100+level*25;level++;say('ESCAPED! LEVEL '+level);burst(gate.x,gate.y,'#ffe16a',45);spawnLevel();updateHud()}
+function burst(x,y,color,n){for(let i=0;i<n;i++){let a=rand(0,Math.PI*2),s=rand(35,210);particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.35,.9),max:.9,color,r:rand(2,5)})}}
+function hurt(){if(player.inv>0||shield>0)return;if(health<=1){health=0;updateHud();endGame();return}health--;player.inv=1.6;shake=10;burst(player.x,player.y,'#ff4e83',22);say('OUCH! WATCH THE TRAPS');updateHud()}
+function keydown(e){let k=e.key.toLowerCase();keys[k]=true;if([' ','arrowup','arrowdown','arrowleft','arrowright'].includes(k))e.preventDefault();if(k==='escape'||k==='p')$('pauseBtn').click();if(k==='b')buy('boost');if(k==='q')buy('shield');if(k==='k')buy('skin');if(k===' '&&state==='play'&&player&&player.z<=0.1){player.vz=360;burst(player.x,player.y,skins[skin],8)}}
+function keyup(e){keys[e.key.toLowerCase()]=false}
+addEventListener('keydown',keydown);addEventListener('keyup',keyup);
+$('jumpBtn').onclick=()=>{if(state==='play'&&player.z<=.1){player.vz=360;burst(player.x,player.y,skins[skin],8)}};
+$('mBoost').onclick=()=>buy('boost');$('mShield').onclick=()=>buy('shield');
+const joyBase=$('joyBase'),joyKnob=$('joyKnob');
+function joyMove(e){const r=joyBase.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;let dx=e.clientX-cx,dy=e.clientY-cy,len=Math.hypot(dx,dy),max=34;if(len>max){dx=dx/len*max;dy=dy/len*max}joy.x=dx/max;joy.y=dy/max;joyKnob.style.transform=`translate(${dx}px,${dy}px)`}
+joyBase.addEventListener('pointerdown',e=>{joyActive=true;joyBase.setPointerCapture(e.pointerId);joyMove(e)});joyBase.addEventListener('pointermove',e=>{if(joyActive)joyMove(e)});function joyEnd(){joyActive=false;joy.x=joy.y=0;joyKnob.style.transform='translate(0,0)'}joyBase.addEventListener('pointerup',joyEnd);joyBase.addEventListener('pointercancel',joyEnd);
+function update(dt){
+ elapsed+=dt;if(toastTimer>0){toastTimer-=dt;if(toastTimer<=0)$('toast').style.opacity=0}
+ if(state!=='play'||!player)return;
+ if(boost>0)boost=Math.max(0,boost-dt);if(shield>0)shield=Math.max(0,shield-dt);if(player.inv>0)player.inv-=dt;
+ let dx=(keys.d||keys.arrowright?1:0)-(keys.a||keys.arrowleft?1:0)+joy.x;
+ let dy=(keys.s||keys.arrowdown?1:0)-(keys.w||keys.arrowup?1:0)+joy.y;
+ let l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}
+ let speed=(boost>0?280:190)*(1+Math.min(level,20)*.018);
+ player.vx=dx*speed;player.vy=dy*speed;player.x+=player.vx*dt;player.y+=player.vy*dt;
+ if(dx||dy)player.face=Math.atan2(dy,dx);
+ player.x=clamp(player.x,arena.x+12,arena.x+arena.w-12);player.y=clamp(player.y,arena.y+12,arena.y+arena.h-12);
+ player.z=Math.max(0,player.z+player.vz*dt);if(player.z>0)player.vz-=850*dt;else{player.z=0;player.vz=0}
+ walls.forEach((w,i)=>{
+   w.p+=w.dir*w.v*dt*(1+level*.025);
+   if(Math.random()<dt*.32){w.dir=Math.random()<.5?1:-1;w.v=rand(.7,1.5)+level*.06}
+   if(w.p>Math.min(48,arena.w*.12)||w.p<0){w.dir*=-1;w.p=clamp(w.p,0,Math.min(48,arena.w*.12))}
+   // Walls are animated inward pressure bands; occasional pulses make danger readable.
+ });
+ const danger=walls.reduce((a,w)=>a+w.p,0);
+ if(Math.random()<dt*(.07+level*.01)){let w=walls[Math.floor(Math.random()*4)];w.dir=1;w.v+=.3}
+ // Closing boundary is the sum of each wall's visible pressure plus a slowly rising level timer.
+ gateClock+=dt;
+ const close=clamp((gateClock-6-level*.25)*1.7,0,Math.min(arena.w,arena.h)*.39);
+ const left=arena.x+close+walls[3].p*.22,right=arena.x+arena.w-close-walls[1].p*.22;
+ const top=arena.y+close+walls[0].p*.22,bottom=arena.y+arena.h-close-walls[2].p*.22;
+ if(player.x<left+8||player.x>right-8||player.y<top+8||player.y>bottom-8){hurt();player.x=clamp(player.x,left+14,right-14);player.y=clamp(player.y,top+14,bottom-14)}
+ if(right-left<95||bottom-top<95){hurt();gateClock=0}
+ // Coins, moving traps and bonus pocket.
+ for(let i=coinItems.length-1;i>=0;i--){let c=coinItems[i];c.phase+=dt*3;if(Math.hypot(player.x-c.x,player.y-c.y)<player.r+c.r+4){coins+=c.value;score+=c.star?35:10;burst(c.x,c.y,c.star?'#fff17a':'#ffd65a',c.star?18:9);say(c.star?'STAR COIN! +3 COINS':'COIN +1');coinItems.splice(i,1);spawnCoin();updateHud()}}
+ traps.forEach(t=>{t.phase+=dt*t.speed;t.x=t.baseX+(t.axis==='x'?Math.sin(t.phase)*t.range:0);t.y=t.baseY+(t.axis==='y'?Math.cos(t.phase)*t.range:0);if(Math.hypot(player.x-t.x,player.y-t.y)<player.r+t.r-3&&player.z<28){hurt();if(shield<=0)player.inv=Math.max(player.inv,.85)}});
+ gate.phase+=dt*3;
+ if(Math.hypot(player.x-gate.x,player.y-gate.y)<gate.r+player.r){winLevel();updateHud()}
+ bonusClock+=dt;
+ if(!bonus&&bonusClock>11){bonus={...safePoint(),r:18,life:7};say('SECRET BONUS PORTAL APPEARED!')}
+ if(bonus){bonus.life-=dt;if(Math.hypot(player.x-bonus.x,player.y-bonus.y)<player.r+bonus.r){coins+=5;score+=75;burst(bonus.x,bonus.y,'#b7ff77',30);bonus=null;say('SECRET BONUS +5 COINS!');updateHud()}else if(bonus.life<=0)bonus=null}
+ for(let i=particles.length-1;i>=0;i--){let p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.05,dt);p.vy*=Math.pow(.05,dt);p.life-=dt;if(p.life<=0)particles.splice(i,1)}
+ score+=dt*level*.7;updateHud();
+}
+function roundRect(c,x,y,w,h,r){c.beginPath();c.roundRect(x,y,w,h,r);c.fill()}
+function draw(){
+ ctx.clearRect(0,0,W,H);
+ // Deep gradient and distant neon skyline.
+ let bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,'#090d28');bg.addColorStop(.55,'#11163a');bg.addColorStop(1,'#070a1c');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.globalAlpha=.28;for(let i=0;i<34;i++){let x=(i*137)%W,y=(i*71)%H;ctx.fillStyle=i%3?'#4b75ca':'#ff63dd';ctx.fillRect(x,y,2,2)}ctx.restore();
+ // Arena floor with perspective-ish grid.
+ ctx.save();ctx.shadowColor='#30ddff';ctx.shadowBlur=22;ctx.fillStyle='#101b3b';roundRect(ctx,arena.x,arena.y,arena.w,arena.h,16);ctx.restore();
+ ctx.save();ctx.beginPath();ctx.roundRect(arena.x,arena.y,arena.w,arena.h,16);ctx.clip();
+ ctx.strokeStyle='#38dfff22';ctx.lineWidth=1;
+ const grid=36;for(let x=arena.x;x<arena.x+arena.w;x+=grid){ctx.beginPath();ctx.moveTo(x,arena.y);ctx.lineTo(x,arena.y+arena.h);ctx.stroke()}for(let y=arena.y;y<arena.y+arena.h;y+=grid){ctx.beginPath();ctx.moveTo(arena.x,y);ctx.lineTo(arena.x+arena.w,y);ctx.stroke()}
+ // Neon floor rings.
+ for(let i=0;i<5;i++){ctx.strokeStyle=`rgba(91,130,255,${.13-i*.018})`;ctx.beginPath();ctx.ellipse(arena.x+arena.w/2,arena.y+arena.h/2,arena.w*(.12+i*.1),arena.h*(.12+i*.1),0,0,Math.PI*2);ctx.stroke()}
+ // Walls closing bands
+ const inset=Math.min(48,arena.w*.12);
+ walls.forEach((w,i)=>{let x=arena.x,y=arena.y,ww=arena.w,hh=arena.h,th=14+w.p*.12;
+  if(w.side==='top'){y+=w.p;hh=th}else if(w.side==='bottom'){y+=arena.h-w.p-th;hh=th}else if(w.side==='left'){x+=w.p;ww=th}else{x+=arena.w-w.p-th;ww=th}
+  ctx.save();ctx.shadowColor=w.color;ctx.shadowBlur=18;let g=ctx.createLinearGradient(x,y,x+ww,y+hh);g.addColorStop(0,w.color);g.addColorStop(.5,'#ffffff');g.addColorStop(1,w.color);ctx.fillStyle=g;roundRect(ctx,x,y,ww,hh,7);ctx.restore();
+  ctx.save();ctx.globalAlpha=.35;ctx.strokeStyle='#fff';ctx.lineWidth=2;for(let n=0;n<6;n++){let px=x+(ww>hh? n*ww/6:0),py=y+(hh>=ww?n*hh/6:0);ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+(ww>hh?12:ww),py+(hh>=ww?12:hh));ctx.stroke()}ctx.restore();
+ });
+ // Subtle danger zone showing walls' inward reach
+ const close=clamp((gateClock-6-level*.25)*1.7,0,Math.min(arena.w,arena.h)*.39);
+ ctx.fillStyle='#ff2d7920';ctx.fillRect(arena.x,arena.y,arena.w,close);ctx.fillRect(arena.x,arena.y+arena.h-close,arena.w,close);ctx.fillRect(arena.x,arena.y,close,arena.h);ctx.fillRect(arena.x+arena.w-close,arena.y,close,arena.h);
+ // Gate
+ if(gate){ctx.save();ctx.translate(gate.x,gate.y);ctx.rotate(gate.phase*.15);ctx.shadowColor='#ffe45c';ctx.shadowBlur=24;ctx.strokeStyle='#ffe45c';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,gate.r+Math.sin(gate.phase)*3,0,Math.PI*2);ctx.stroke();ctx.strokeStyle='#5effe5';ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,gate.r-7,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff6bd';ctx.beginPath();ctx.moveTo(-6,-9);ctx.lineTo(9,0);ctx.lineTo(-6,9);ctx.closePath();ctx.fill();ctx.restore();ctx.fillStyle='#fff2a0';ctx.font='bold 10px system-ui';ctx.textAlign='center';ctx.fillText('EXIT',gate.x,gate.y-31)}
+ // coins
+ coinItems.forEach(c=>{ctx.save();ctx.translate(c.x,c.y+Math.sin(c.phase)*3);ctx.rotate(c.phase*.35);ctx.shadowColor=c.star?'#fff17a':'#ffd65a';ctx.shadowBlur=c.star?23:15;ctx.fillStyle=c.star?'#fff17a':'#ffbd38';ctx.beginPath();if(c.star){for(let j=0;j<10;j++){let a=-Math.PI/2+j*Math.PI/5,r=j%2?c.r*.48:c.r;let px=Math.cos(a)*r,py=Math.sin(a)*r;j?ctx.lineTo(px,py):ctx.moveTo(px,py)}ctx.closePath()}else ctx.ellipse(0,0,c.r*.8,c.r,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff8c9';ctx.lineWidth=2;ctx.stroke();if(!c.star){ctx.fillStyle='#fff3ae';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('$',0,1)}ctx.restore()});
+ // Traps
+ traps.forEach(t=>{ctx.save();ctx.translate(t.x,t.y);ctx.rotate(t.phase);ctx.shadowColor='#ff4d85';ctx.shadowBlur=15;ctx.fillStyle='#ff3f76';ctx.beginPath();for(let i=0;i<8;i++){let a=i*Math.PI/4,r=i%2?t.r*.28:t.r;ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r)}ctx.closePath();ctx.fill();ctx.strokeStyle='#ffd2e2';ctx.lineWidth=2;ctx.stroke();ctx.restore()});
+ if(bonus){ctx.save();ctx.translate(bonus.x,bonus.y);ctx.rotate(elapsed*1.5);ctx.shadowColor='#b8ff77';ctx.shadowBlur=25;ctx.strokeStyle='#b8ff77';ctx.lineWidth=3;ctx.strokeRect(-bonus.r,-bonus.r,bonus.r*2,bonus.r*2);ctx.fillStyle='#b8ff77';ctx.font='bold 11px system-ui';ctx.textAlign='center';ctx.fillText('★',0,4);ctx.restore()}
+ ctx.restore();
+ // Character shadow and cartoon runner
+ if(player){
+  ctx.save();ctx.globalAlpha=.32;ctx.fillStyle='#000';ctx.beginPath();ctx.ellipse(player.x,player.y+8,13+player.z*.04,7,0,0,Math.PI*2);ctx.fill();ctx.restore();
+  ctx.save();ctx.translate(player.x,player.y-player.z*.55);if(player.inv>0&&Math.floor(elapsed*14)%2)ctx.globalAlpha=.35;
+  if(shield>0){ctx.strokeStyle='#a68cff';ctx.lineWidth=3;ctx.shadowColor='#a68cff';ctx.shadowBlur=18;ctx.beginPath();ctx.arc(0,0,player.r+9+Math.sin(elapsed*7)*2,0,Math.PI*2);ctx.stroke()}
+  if(boost>0){ctx.strokeStyle='#58f7ff';ctx.lineWidth=3;ctx.shadowColor='#58f7ff';ctx.shadowBlur=14;ctx.beginPath();ctx.moveTo(-Math.cos(player.face)*13,-Math.sin(player.face)*13);ctx.lineTo(-Math.cos(player.face)*27,-Math.sin(player.face)*27);ctx.stroke()}
+  ctx.shadowColor=skins[skin];ctx.shadowBlur=18;ctx.fillStyle=skins[skin];ctx.beginPath();ctx.ellipse(0,0,player.r,player.r*1.12,0,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+  // ears/hood and face
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(4,-3,3.5,0,Math.PI*2);ctx.arc(-5,-3,3.5,0,Math.PI*2);ctx.fill();ctx.fillStyle='#14203b';ctx.beginPath();ctx.arc(5,-2,1.6,0,Math.PI*2);ctx.arc(-4,-2,1.6,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#14203b';ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(0,3,4,.15,Math.PI-.15);ctx.stroke();
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(-7,-player.r+2,4,0,Math.PI*2);ctx.arc(7,-player.r+2,4,0,Math.PI*2);ctx.fill();
+  ctx.restore();
+ }
+ // particles
+ particles.forEach(p=>{ctx.save();ctx.globalAlpha=clamp(p.life/p.max,0,1);ctx.fillStyle=p.color;ctx.shadowColor=p.color;ctx.shadowBlur=10;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();ctx.restore()});
+ // power meters
+ if(state==='play'&&(boost>0||shield>0)){ctx.fillStyle='#071127cc';roundRect(ctx,arena.x+10,arena.y+10,130,34,9);ctx.font='bold 11px system-ui';ctx.fillStyle=boost>0?'#55f4ff':'#b8a4ff';ctx.fillText(boost>0?'⚡ BOOST '+boost.toFixed(1)+'s':'◈ SHIELD '+shield.toFixed(1)+'s',arena.x+20,arena.y+31)}
+ if(state==='play'&&gateClock>5){ctx.fillStyle='#071127aa';roundRect(ctx,W/2-82,arena.y-23,164,7,4);ctx.fillStyle='#ff6489';roundRect(ctx,W/2-82,arena.y-23,164*clamp((gateClock-5)/14,0,1),7,4);ctx.font='bold 9px system-ui';ctx.textAlign='center';ctx.fillStyle='#d7e2ff';ctx.fillText('WALL PRESSURE',W/2,arena.y-29)}
+}
+function loop(t){let dt=Math.min(.033,(t-last)/1000||0);last=t;update(dt);if(shake>0){ctx.save();ctx.translate(rand(-shake,shake),rand(-shake,shake));shake=Math.max(0,shake-dt*22);draw();ctx.restore()}else draw();requestAnimationFrame(loop)}
+resize();player=newPlayer();setGate();requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
